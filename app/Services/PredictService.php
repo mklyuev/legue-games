@@ -7,6 +7,11 @@ use App\Models\TeamStatistic;
 
 class PredictService
 {
+    /**
+     * using bernoulli distribution function
+     *
+     * @param int $week
+     */
     public function updatePredictions(int $week): void
     {
         $highestPoints = $this->getHighestPoints();
@@ -16,13 +21,17 @@ class PredictService
             ->orderBy('points', 'ASC')
             ->get();
 
-        $leftPercentage = 100;
         foreach ($teamStatistics as $teamStatistic) {
-            $pointsToWin = $highestPoints - $teamStatistic->points;
-            $gamesHasToBeWin = ceil($pointsToWin / 2);
+            if ( $teamStatistic->points === $highestPoints) {
+                $pointsToWin = $this->getPreHighestPoints() - $highestPoints;
+            } else {
+                $pointsToWin = $highestPoints - $teamStatistic->points;
+            }
+            $gamesHasToBeWin = (int)
+                (ceil($pointsToWin / 2) + ceil($leftGamesCount / 2));
 
-            if ($gamesHasToBeWin == 0) {
-                $teamStatistic->win_percentage = $leftPercentage;
+            if ($gamesHasToBeWin <= 0) {
+                $teamStatistic->win_percentage = 100;
                 $teamStatistic->save();
                 continue;
             }
@@ -33,26 +42,38 @@ class PredictService
                 continue;
             }
 
-            $gamePercentageStep = pow(2, $leftGamesCount);
-            if ($gamesHasToBeWin == $leftGamesCount) {
-                $teamStatistic->win_percentage = $gamesHasToBeWin / ($gamePercentageStep) * 25;
-            } else {
-                $teamStatistic->win_percentage = (1 - ($gamesHasToBeWin / ($gamePercentageStep))) * 25;
-            }
+            $leftGameFactorial = (int) gmp_strval(gmp_fact($leftGamesCount));
+            $gameHasToBeWinFactorial = (int) gmp_strval(gmp_fact($gamesHasToBeWin));
+            $diffFactorial = (int) gmp_strval(gmp_fact($leftGamesCount - $gamesHasToBeWin));
+            $percent = $leftGameFactorial
+                / ($gameHasToBeWinFactorial * $diffFactorial)
+                * pow(0.5, $leftGamesCount);
+
+            $teamStatistic->win_percentage = $percent * 100;
+
             $teamStatistic->save();
-            $leftPercentage -= $teamStatistic->win_percentage;
         }
     }
 
     private function getWeeksCount()
     {
         return Game::query()
-                ->max('week') + 1;
+                ->max('week');
     }
 
     private function getHighestPoints()
     {
         return TeamStatistic::query()
             ->max('points');
+    }
+
+    private function getPreHighestPoints()
+    {
+        return TeamStatistic::query()
+            ->select('points')
+            ->orderBy('points', 'DESC')
+            ->offset(1)
+            ->first()
+            ->points;
     }
 }

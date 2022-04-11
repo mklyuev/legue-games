@@ -41,14 +41,14 @@ class UpdateGameStatistic
 
         $hostTeamStatistic->played += 1;
         $hostTeamStatistic->won += (int) ($hostTeamPoints === self::POINTS_FOR_WIN);
-        $hostTeamStatistic->draw += (int) ($hostTeamPoints === self::POINTS_FOR_WIN);
+        $hostTeamStatistic->draw += (int) ($hostTeamPoints === self::POINTS_FOR_DRAW);
         $hostTeamStatistic->loss += (int) ($hostTeamPoints === 0);
         $hostTeamStatistic->points += (int) ($hostTeamPoints);
         $hostTeamStatistic->goals += (int) ($gameEnd->game->hostTeamGoals);
 
         $guestTeamStatistic->played += 1;
         $guestTeamStatistic->won += (int) ($guestTeamPoints === self::POINTS_FOR_WIN);
-        $guestTeamStatistic->draw += (int) ($guestTeamPoints === self::POINTS_FOR_WIN);
+        $guestTeamStatistic->draw += (int) ($guestTeamPoints === self::POINTS_FOR_DRAW);
         $guestTeamStatistic->loss += (int) ($guestTeamPoints === 0);
         $guestTeamStatistic->points += (int) ($guestTeamPoints);
         $guestTeamStatistic->goals += (int) ($gameEnd->game->guestTeamGoals);
